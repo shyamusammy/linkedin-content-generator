@@ -22,15 +22,31 @@ export type GeneratedContent = {
  * n8n responses can vary; we try common field name variants.
  */
 export function normalizeN8nResponse(raw: unknown): GeneratedContent {
-  const r =
-    Array.isArray(raw) && raw.length > 0
-      ? (raw[0] as Record<string, unknown>)
-      : ((raw as Record<string, unknown>) ?? {});
+  // Unwrap common n8n envelopes: arrays, { data }, { output }, { json }
+  let r: Record<string, unknown> = {};
+  const unwrap = (val: unknown): Record<string, unknown> => {
+    if (Array.isArray(val) && val.length > 0) return unwrap(val[0]);
+    if (val && typeof val === "object") {
+      const obj = val as Record<string, unknown>;
+      if (obj.output && typeof obj.output === "object") return unwrap(obj.output);
+      if (obj.data && typeof obj.data === "object") return unwrap(obj.data);
+      if (obj.json && typeof obj.json === "object") return unwrap(obj.json);
+      return obj;
+    }
+    return {};
+  };
+  r = unwrap(raw);
+
+  // Skip n8n template expressions that leaked through unrendered, e.g. "={{ ... }}"
+  const isExpr = (s: string) => {
+    const t = s.trim();
+    return t.startsWith("={{") || t.startsWith("{{") || (t.includes("{{") && t.includes("}}"));
+  };
 
   const pick = (...keys: string[]): string => {
     for (const k of keys) {
       const v = r[k];
-      if (typeof v === "string" && v.trim()) return v.trim();
+      if (typeof v === "string" && v.trim() && !isExpr(v)) return v.trim();
     }
     return "";
   };
@@ -40,13 +56,15 @@ export function normalizeN8nResponse(raw: unknown): GeneratedContent {
   let hashtags: string[] = [];
   if (Array.isArray(hashtagsRaw)) {
     hashtags = hashtagsRaw.map((h) => String(h).trim()).filter(Boolean);
-  } else if (typeof hashtagsRaw === "string") {
+  } else if (typeof hashtagsRaw === "string" && !isExpr(hashtagsRaw)) {
     hashtags = hashtagsRaw
       .split(/[\s,]+/)
       .map((h) => h.trim())
       .filter(Boolean);
   }
-  hashtags = hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`));
+  hashtags = hashtags
+    .filter((h) => h && !isExpr(h))
+    .map((h) => (h.startsWith("#") ? h : `#${h}`));
 
   return {
     title: pick("title", "Title", "headline"),
