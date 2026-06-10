@@ -328,6 +328,45 @@ function GeneratePage() {
         </Card>
       )}
 
+      {errorInfo && !loading && (
+        <Card className="rounded-2xl border-destructive/40 bg-destructive/5 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base text-destructive">
+              Generation failed
+            </CardTitle>
+            <CardDescription className="text-destructive/80">
+              {errorInfo.message}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {typeof errorInfo.status === "number" && (
+              <div>
+                <span className="font-medium">HTTP status:</span> {errorInfo.status}
+              </div>
+            )}
+            {errorInfo.missing && errorInfo.missing.length > 0 && (
+              <div>
+                <span className="font-medium">Missing fields:</span>{" "}
+                {errorInfo.missing.join(", ")}
+              </div>
+            )}
+            {errorInfo.rawBody !== undefined && (
+              <div>
+                <div className="mb-1 font-medium">Raw webhook response:</div>
+                <pre className="max-h-80 overflow-auto rounded-lg border bg-background p-3 text-xs">
+                  {errorInfo.rawBody || "(empty)"}
+                </pre>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Fix the "Respond to Webhook" node in n8n so it returns a JSON
+              object (or array) with fields: title, linkedin_post, image_prompt,
+              hashtags, cta.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {result && <ResultsView content={result} />}
     </div>
   );
