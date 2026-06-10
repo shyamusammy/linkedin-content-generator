@@ -70,6 +70,12 @@ function GeneratePage() {
   const [postType, setPostType] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GeneratedContent | null>(null);
+  const [errorInfo, setErrorInfo] = useState<{
+    message: string;
+    status?: number;
+    rawBody?: string;
+    missing?: string[];
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +87,7 @@ function GeneratePage() {
 
     setLoading(true);
     setResult(null);
+    setErrorInfo(null);
 
     // Create pending row
     const { data: pending, error: insertError } = await supabase
@@ -116,17 +123,61 @@ function GeneratePage() {
         }),
       });
 
-      if (!res.ok) throw new Error(`Webhook returned ${res.status}`);
-
       const text = await res.text();
+
+      if (!res.ok) {
+        setErrorInfo({
+          message: `Webhook returned HTTP ${res.status}`,
+          status: res.status,
+          rawBody: text,
+        });
+        await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+        toast.error(`Webhook error ${res.status}`);
+        return;
+      }
+
+      if (!text || !text.trim()) {
+        setErrorInfo({
+          message: "The webhook responded with an empty body. Check the 'Respond to Webhook' node in n8n.",
+          status: res.status,
+          rawBody: "(empty)",
+        });
+        await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+        toast.error("Empty response from webhook");
+        return;
+      }
+
       let raw: unknown = {};
+      let parseFailed = false;
       try {
-        raw = text ? JSON.parse(text) : {};
+        raw = JSON.parse(text);
       } catch {
+        parseFailed = true;
         raw = { linkedinPost: text };
       }
 
       const content = normalizeN8nResponse(raw);
+      const missing: string[] = [];
+      if (!content.title) missing.push("title");
+      if (!content.linkedinPost) missing.push("linkedin_post");
+      if (!content.imagePrompt) missing.push("image_prompt");
+      if (content.hashtags.length === 0) missing.push("hashtags");
+      if (!content.cta) missing.push("cta");
+
+      // Hard fail if the essential post body is missing
+      if (!content.linkedinPost) {
+        setErrorInfo({
+          message: parseFailed
+            ? "Webhook response wasn't valid JSON."
+            : "Webhook response is missing required fields. The n8n workflow may be returning unevaluated expressions or the wrong shape.",
+          status: res.status,
+          rawBody: text,
+          missing,
+        });
+        await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+        toast.error("Incomplete content received");
+        return;
+      }
 
       await supabase
         .from("posts")
@@ -141,9 +192,16 @@ function GeneratePage() {
         .eq("id", pending.id);
 
       setResult(content);
-      toast.success("Content generated");
+      if (missing.length > 0) {
+        toast.success(`Generated (missing: ${missing.join(", ")})`);
+      } else {
+        toast.success("Content generated");
+      }
     } catch (err) {
       console.error(err);
+      setErrorInfo({
+        message: err instanceof Error ? err.message : "Network request failed",
+      });
       await supabase
         .from("posts")
         .update({ status: "failed" })
@@ -266,6 +324,45 @@ function GeneratePage() {
           <CardContent className="flex items-center gap-3 p-8 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Calling the AI workflow… this can take 20–60 seconds.
+          </CardContent>
+        </Card>
+      )}
+
+      {errorInfo && !loading && (
+        <Card className="rounded-2xl border-destructive/40 bg-destructive/5 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base text-destructive">
+              Generation failed
+            </CardTitle>
+            <CardDescription className="text-destructive/80">
+              {errorInfo.message}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {typeof errorInfo.status === "number" && (
+              <div>
+                <span className="font-medium">HTTP status:</span> {errorInfo.status}
+              </div>
+            )}
+            {errorInfo.missing && errorInfo.missing.length > 0 && (
+              <div>
+                <span className="font-medium">Missing fields:</span>{" "}
+                {errorInfo.missing.join(", ")}
+              </div>
+            )}
+            {errorInfo.rawBody !== undefined && (
+              <div>
+                <div className="mb-1 font-medium">Raw webhook response:</div>
+                <pre className="max-h-80 overflow-auto rounded-lg border bg-background p-3 text-xs">
+                  {errorInfo.rawBody || "(empty)"}
+                </pre>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Fix the "Respond to Webhook" node in n8n so it returns a JSON
+              object (or array) with fields: title, linkedin_post, image_prompt,
+              hashtags, cta.
+            </p>
           </CardContent>
         </Card>
       )}
