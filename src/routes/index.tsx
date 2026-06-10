@@ -18,7 +18,6 @@ import {
 import { ResultsView } from "@/components/ResultsView";
 import {
   N8N_WEBHOOK_URL,
-  normalizeN8nResponse,
   type GeneratedContent,
 } from "@/lib/n8n";
 import { supabase } from "@/integrations/supabase/client";
@@ -110,11 +109,18 @@ function GeneratePage() {
       return;
     }
 
+    const callbackUrl = `${window.location.origin}/api/public/n8n-callback`;
+
     try {
+      // Fire-and-forget: n8n should "Respond Immediately" and POST results
+      // back to callbackUrl with { id, title, linkedin_post, image_prompt,
+      // hashtags, cta } when generation finishes.
       const res = await fetch(N8N_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          id: pending.id,
+          callbackUrl,
           email: parsed.data.email,
           topic: parsed.data.topic,
           audience: parsed.data.audience,
@@ -123,9 +129,8 @@ function GeneratePage() {
         }),
       });
 
-      const text = await res.text();
-
       if (!res.ok) {
+        const text = await res.text().catch(() => "");
         setErrorInfo({
           message: `Webhook returned HTTP ${res.status}`,
           status: res.status,
@@ -133,70 +138,63 @@ function GeneratePage() {
         });
         await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
         toast.error(`Webhook error ${res.status}`);
+        setLoading(false);
         return;
       }
 
-      if (!text || !text.trim()) {
-        setErrorInfo({
-          message: "The webhook responded with an empty body. Check the 'Respond to Webhook' node in n8n.",
-          status: res.status,
-          rawBody: "(empty)",
-        });
-        await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
-        toast.error("Empty response from webhook");
-        return;
+      // Poll the posts row until the callback marks it completed/failed.
+      // Max ~5 minutes (100 attempts × 3s).
+      const started = Date.now();
+      const MAX_MS = 5 * 60 * 1000;
+      const INTERVAL_MS = 3000;
+
+      while (Date.now() - started < MAX_MS) {
+        await new Promise((r) => setTimeout(r, INTERVAL_MS));
+
+        const { data: row, error: pollErr } = await supabase
+          .from("posts")
+          .select("status, title, linkedin_post, image_prompt, hashtags, cta")
+          .eq("id", pending.id)
+          .maybeSingle();
+
+        if (pollErr) {
+          console.error(pollErr);
+          continue;
+        }
+        if (!row) continue;
+
+        if (row.status === "completed" && row.linkedin_post) {
+          setResult({
+            title: row.title ?? parsed.data.topic,
+            linkedinPost: row.linkedin_post,
+            imagePrompt: row.image_prompt ?? "",
+            hashtags: row.hashtags ?? [],
+            cta: row.cta ?? "",
+          });
+          toast.success("Content generated");
+          setLoading(false);
+          return;
+        }
+
+        if (row.status === "failed") {
+          setErrorInfo({
+            message:
+              "n8n reported a failure for this job. Check the workflow execution log.",
+          });
+          toast.error("Generation failed");
+          setLoading(false);
+          return;
+        }
       }
 
-      let raw: unknown = {};
-      let parseFailed = false;
-      try {
-        raw = JSON.parse(text);
-      } catch {
-        parseFailed = true;
-        raw = { linkedinPost: text };
-      }
-
-      const content = normalizeN8nResponse(raw);
-      const missing: string[] = [];
-      if (!content.title) missing.push("title");
-      if (!content.linkedinPost) missing.push("linkedin_post");
-      if (!content.imagePrompt) missing.push("image_prompt");
-      if (content.hashtags.length === 0) missing.push("hashtags");
-      if (!content.cta) missing.push("cta");
-
-      // Hard fail if the essential post body is missing
-      if (!content.linkedinPost) {
-        setErrorInfo({
-          message: parseFailed
-            ? "Webhook response wasn't valid JSON."
-            : "Webhook response is missing required fields. The n8n workflow may be returning unevaluated expressions or the wrong shape.",
-          status: res.status,
-          rawBody: text,
-          missing,
-        });
-        await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
-        toast.error("Incomplete content received");
-        return;
-      }
-
-      await supabase
-        .from("posts")
-        .update({
-          title: content.title || parsed.data.topic,
-          linkedin_post: content.linkedinPost,
-          image_prompt: content.imagePrompt,
-          hashtags: content.hashtags,
-          cta: content.cta,
-          status: "completed",
-        })
-        .eq("id", pending.id);
-
-      setResult(content);
-      if (missing.length > 0) {
-        toast.success(`Generated (missing: ${missing.join(", ")})`);
-      } else {
-        toast.success("Content generated");
-      }
+      // Timed out waiting for the callback
+      setErrorInfo({
+        message:
+          "Timed out waiting for n8n to call back (5 min). Verify the Respond to Webhook node is set to 'Immediately' and that the workflow POSTs results to the callback URL.",
+      });
+      await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+      toast.error("Timed out");
+      setLoading(false);
     } catch (err) {
       console.error(err);
       setErrorInfo({
@@ -207,7 +205,6 @@ function GeneratePage() {
         .update({ status: "failed" })
         .eq("id", pending.id);
       toast.error("Generation failed. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
