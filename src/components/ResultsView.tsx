@@ -39,11 +39,15 @@ export function ResultsView({ content }: { content: GeneratedContent }) {
     }
   };
 
-  const openWith = async (url: string, label: string) => {
-    if (content.imagePrompt) {
-      await copyText(content.imagePrompt, `Image prompt for ${label}`);
+  const openWith = (url: string, label: string) => {
+    // Open synchronously inside the click handler so popup blockers allow it.
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) {
+      toast.error("Popup blocked — allow popups for this site");
     }
-    window.open(url, "_blank", "noopener,noreferrer");
+    if (content.imagePrompt) {
+      void copyText(content.imagePrompt, `Image prompt for ${label}`);
+    }
   };
 
   return (
