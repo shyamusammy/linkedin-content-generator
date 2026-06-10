@@ -18,7 +18,6 @@ import {
 import { ResultsView } from "@/components/ResultsView";
 import {
   N8N_WEBHOOK_URL,
-  normalizeN8nResponse,
   type GeneratedContent,
 } from "@/lib/n8n";
 import { supabase } from "@/integrations/supabase/client";
