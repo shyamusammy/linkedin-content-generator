@@ -39,16 +39,7 @@ export function ResultsView({ content }: { content: GeneratedContent }) {
     }
   };
 
-  const openWith = (url: string, label: string) => {
-    // Use a synthetic anchor click — works in sandboxed iframes where
-    // window.open is blocked by the browser's popup policy.
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  const handleExternalLinkClick = (label: string) => {
     if (content.imagePrompt) {
       void copyText(content.imagePrompt, `Image prompt for ${label}`);
     }
@@ -146,26 +137,38 @@ export function ResultsView({ content }: { content: GeneratedContent }) {
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
+              asChild
               variant="default"
               size="sm"
               className="gap-1.5"
-              onClick={() => openWith("https://chatgpt.com", "ChatGPT")}
               disabled={!content.imagePrompt}
             >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Open ChatGPT
+              <a
+                href="https://chatgpt.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => handleExternalLinkClick("ChatGPT")}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Open ChatGPT
+              </a>
             </Button>
             <Button
+              asChild
               variant="secondary"
               size="sm"
               className="gap-1.5"
-              onClick={() =>
-                openWith("https://gemini.google.com/app", "Gemini")
-              }
               disabled={!content.imagePrompt}
             >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Open Gemini
+              <a
+                href="https://gemini.google.com/app"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => handleExternalLinkClick("Gemini")}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Open Gemini
+              </a>
             </Button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
