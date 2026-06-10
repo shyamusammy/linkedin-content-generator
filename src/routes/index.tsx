@@ -87,6 +87,7 @@ function GeneratePage() {
 
     setLoading(true);
     setResult(null);
+    setErrorInfo(null);
 
     // Create pending row
     const { data: pending, error: insertError } = await supabase
@@ -122,17 +123,61 @@ function GeneratePage() {
         }),
       });
 
-      if (!res.ok) throw new Error(`Webhook returned ${res.status}`);
-
       const text = await res.text();
+
+      if (!res.ok) {
+        setErrorInfo({
+          message: `Webhook returned HTTP ${res.status}`,
+          status: res.status,
+          rawBody: text,
+        });
+        await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+        toast.error(`Webhook error ${res.status}`);
+        return;
+      }
+
+      if (!text || !text.trim()) {
+        setErrorInfo({
+          message: "The webhook responded with an empty body. Check the 'Respond to Webhook' node in n8n.",
+          status: res.status,
+          rawBody: "(empty)",
+        });
+        await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+        toast.error("Empty response from webhook");
+        return;
+      }
+
       let raw: unknown = {};
+      let parseFailed = false;
       try {
-        raw = text ? JSON.parse(text) : {};
+        raw = JSON.parse(text);
       } catch {
+        parseFailed = true;
         raw = { linkedinPost: text };
       }
 
       const content = normalizeN8nResponse(raw);
+      const missing: string[] = [];
+      if (!content.title) missing.push("title");
+      if (!content.linkedinPost) missing.push("linkedin_post");
+      if (!content.imagePrompt) missing.push("image_prompt");
+      if (content.hashtags.length === 0) missing.push("hashtags");
+      if (!content.cta) missing.push("cta");
+
+      // Hard fail if the essential post body is missing
+      if (!content.linkedinPost) {
+        setErrorInfo({
+          message: parseFailed
+            ? "Webhook response wasn't valid JSON."
+            : "Webhook response is missing required fields. The n8n workflow may be returning unevaluated expressions or the wrong shape.",
+          status: res.status,
+          rawBody: text,
+          missing,
+        });
+        await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+        toast.error("Incomplete content received");
+        return;
+      }
 
       await supabase
         .from("posts")
@@ -147,9 +192,16 @@ function GeneratePage() {
         .eq("id", pending.id);
 
       setResult(content);
-      toast.success("Content generated");
+      if (missing.length > 0) {
+        toast.success(`Generated (missing: ${missing.join(", ")})`);
+      } else {
+        toast.success("Content generated");
+      }
     } catch (err) {
       console.error(err);
+      setErrorInfo({
+        message: err instanceof Error ? err.message : "Network request failed",
+      });
       await supabase
         .from("posts")
         .update({ status: "failed" })
