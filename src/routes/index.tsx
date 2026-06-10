@@ -109,7 +109,16 @@ function GeneratePage() {
       return;
     }
 
-    const callbackUrl = `${window.location.origin}/api/public/n8n-callback`;
+    // n8n must hit a publicly reachable host. The preview iframe origin
+    // (id-preview--*.lovable.app) is auth-gated and 302s external callers
+    // to the login page, so we always use the stable preview/published host.
+    const projectId = import.meta.env.VITE_LOVABLE_PROJECT_ID ?? "f14199a3-bc89-499c-a804-135496fbd4ec";
+    const host = window.location.host;
+    const callbackHost =
+      host.endsWith(".lovable.app") && !host.startsWith("id-preview--")
+        ? `https://${host}` // already on the stable preview or published host
+        : `https://project--${projectId}-dev.lovable.app`;
+    const callbackUrl = `${callbackHost}/api/public/n8n-callback`;
 
     try {
       // Fire-and-forget: n8n should "Respond Immediately" and POST results
