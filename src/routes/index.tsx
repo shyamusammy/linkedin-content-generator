@@ -70,6 +70,12 @@ function GeneratePage() {
   const [postType, setPostType] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GeneratedContent | null>(null);
+  const [errorInfo, setErrorInfo] = useState<{
+    message: string;
+    status?: number;
+    rawBody?: string;
+    missing?: string[];
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
