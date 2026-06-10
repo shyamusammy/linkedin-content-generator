@@ -40,11 +40,15 @@ export function ResultsView({ content }: { content: GeneratedContent }) {
   };
 
   const openWith = (url: string, label: string) => {
-    // Open synchronously inside the click handler so popup blockers allow it.
-    const win = window.open(url, "_blank", "noopener,noreferrer");
-    if (!win) {
-      toast.error("Popup blocked — allow popups for this site");
-    }
+    // Use a synthetic anchor click — works in sandboxed iframes where
+    // window.open is blocked by the browser's popup policy.
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     if (content.imagePrompt) {
       void copyText(content.imagePrompt, `Image prompt for ${label}`);
     }
