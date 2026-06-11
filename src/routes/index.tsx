@@ -209,7 +209,7 @@ function GeneratePage() {
         message:
           "Timed out waiting for n8n to call back (5 min). Verify the Respond to Webhook node is set to 'Immediately' and that the workflow POSTs results to the callback URL.",
       });
-      await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+      await markPostFailed({ data: { id: pending.id } });
       toast.error("Timed out");
       setLoading(false);
     } catch (err) {
