@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getPostStatus, markPostFailed } from "@/lib/posts.functions";
 import { triggerN8nGeneration } from "@/lib/n8n.functions";
 import { useServerFn } from "@tanstack/react-start";
+import homepageHero from "@/assets/homepage-hero.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -208,6 +209,15 @@ function GeneratePage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-8">
+      <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+        <img
+          src={homepageHero.url}
+          alt="LinkedIn AI Content Generator — craft polished posts in seconds"
+          className="h-auto w-full"
+          loading="eager"
+        />
+      </div>
+
       <header className="space-y-1">
         <h1 className="text-3xl font-semibold tracking-tight">Generate</h1>
         <p className="text-sm text-muted-foreground">
