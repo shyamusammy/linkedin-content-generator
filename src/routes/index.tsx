@@ -21,6 +21,7 @@ import {
   type GeneratedContent,
 } from "@/lib/n8n";
 import { supabase } from "@/integrations/supabase/client";
+import { getPostStatus, markPostFailed } from "@/lib/posts.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
