@@ -1,0 +1,16 @@
+# LinkedIn AI Content Generator
+
+> Generate polished, ready-to-publish LinkedIn posts in seconds with AI. Pick a topic, target audience, tone of voice, and post type, then get a complete draft with hashtags, a call-to-action, and an image prompt.
+
+## Pages
+
+- [/](/): Generate a new LinkedIn post — enter your topic, audience, tone, and post type, then submit to create a draft.
+- [/history](/history): Browse all previously generated LinkedIn posts linked to your email address.
+
+## Features
+
+- AI-powered LinkedIn post generation
+- Customizable topic, audience, tone, and post type
+- Automatic hashtag and CTA suggestions
+- AI image prompt generation for post visuals
+- Post history and status tracking
