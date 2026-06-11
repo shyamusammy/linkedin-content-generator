@@ -60,6 +60,8 @@ const FormSchema = z.object({
   tone: z.string().min(1, "Select a tone"),
   postType: z.string().min(1, "Select a post type"),
 });
+  const trigger = useServerFn(triggerN8nGeneration);
+
 
 function GeneratePage() {
   const [email, setEmail] = useState("");
