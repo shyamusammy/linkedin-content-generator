@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ResultsView } from "@/components/ResultsView";
-import { supabase } from "@/integrations/supabase/client";
+import { listPostsByEmail } from "@/lib/posts.functions";
 import type { GeneratedContent } from "@/lib/n8n";
 
 export const Route = createFileRoute("/history")({
