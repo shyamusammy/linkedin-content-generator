@@ -16,12 +16,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ResultsView } from "@/components/ResultsView";
-import {
-  N8N_WEBHOOK_URL,
-  type GeneratedContent,
-} from "@/lib/n8n";
+import { type GeneratedContent } from "@/lib/n8n";
 import { supabase } from "@/integrations/supabase/client";
 import { getPostStatus, markPostFailed } from "@/lib/posts.functions";
+import { triggerN8nGeneration } from "@/lib/n8n.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/")({
   head: () => ({
