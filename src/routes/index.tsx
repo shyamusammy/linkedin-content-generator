@@ -16,12 +16,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ResultsView } from "@/components/ResultsView";
-import {
-  N8N_WEBHOOK_URL,
-  type GeneratedContent,
-} from "@/lib/n8n";
+import { type GeneratedContent } from "@/lib/n8n";
 import { supabase } from "@/integrations/supabase/client";
 import { getPostStatus, markPostFailed } from "@/lib/posts.functions";
+import { triggerN8nGeneration } from "@/lib/n8n.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,6 +60,8 @@ const FormSchema = z.object({
   tone: z.string().min(1, "Select a tone"),
   postType: z.string().min(1, "Select a post type"),
 });
+  const trigger = useServerFn(triggerN8nGeneration);
+
 
 function GeneratePage() {
   const [email, setEmail] = useState("");
@@ -110,51 +111,33 @@ function GeneratePage() {
       return;
     }
 
-    // n8n must hit a publicly reachable host. The lovableproject.com sandbox
-    // and id-preview--*.lovable.app are auth-gated (302 to login) for external
-    // callers, so always use the stable project--{id}-dev.lovable.app host
-    // unless we're already on a published .lovable.app domain.
-    const projectId = import.meta.env.VITE_LOVABLE_PROJECT_ID ?? "f14199a3-bc89-499c-a804-135496fbd4ec";
-    const host = window.location.host;
-    const onPublishedHost =
-      host.endsWith(".lovable.app") &&
-      !host.startsWith("id-preview--") &&
-      !host.startsWith(`project--${projectId}-dev.`);
-    const callbackHost = onPublishedHost
-      ? `${window.location.protocol}//${host}`
-      : `https://project--${projectId}-dev.lovable.app`;
-    const callbackUrl = `${callbackHost}/api/public/n8n-callback`;
-
     try {
-      // Fire-and-forget: n8n should "Respond Immediately" and POST results
-      // back to callbackUrl with { id, title, linkedin_post, image_prompt,
-      // hashtags, cta } when generation finishes.
-      const res = await fetch(N8N_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // The callback URL is constructed server-side inside triggerN8nGeneration
+      // to prevent SSRF: a client-controlled callbackUrl would let attackers
+      // make n8n POST generated content to arbitrary hosts.
+      const trig = await trigger({
+        data: {
           id: pending.id,
-          callbackUrl,
           email: parsed.data.email,
           topic: parsed.data.topic,
           audience: parsed.data.audience,
           tone: parsed.data.tone,
           postType: parsed.data.postType,
-        }),
+        },
       });
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
+      if (!trig.ok) {
         setErrorInfo({
-          message: `Webhook returned HTTP ${res.status}`,
-          status: res.status,
-          rawBody: text,
+          message: `Webhook returned HTTP ${trig.status ?? 0}`,
+          status: trig.status,
+          rawBody: trig.body,
         });
         await markPostFailed({ data: { id: pending.id } });
-        toast.error(`Webhook error ${res.status}`);
+        toast.error(`Webhook error ${trig.status ?? ""}`);
         setLoading(false);
         return;
       }
+
 
       // Poll the posts row until the callback marks it completed/failed.
       // Max ~5 minutes (100 attempts × 3s).
