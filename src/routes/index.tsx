@@ -225,7 +225,8 @@ function GeneratePage() {
         </p>
       </header>
 
-      <Card className="rounded-2xl shadow-sm">
+      <Card className="rounded-2xl bg-white shadow-xl">
+
         <CardHeader>
           <CardTitle className="text-lg">New post</CardTitle>
           <CardDescription>
