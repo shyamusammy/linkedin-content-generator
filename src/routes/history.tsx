@@ -83,22 +83,16 @@ function HistoryPage() {
     if (!submittedEmail) return;
     let cancelled = false;
     setLoading(true);
-    supabase
-      .from("posts")
-      .select(
-        "id, email, topic, title, linkedin_post, image_prompt, hashtags, cta, status, created_at",
-      )
-      .eq("email", submittedEmail)
-      .order("created_at", { ascending: false })
-      .limit(100)
-      .then(({ data, error }) => {
+    listPostsByEmail({ data: { email: submittedEmail } })
+      .then(({ rows }) => {
         if (cancelled) return;
-        if (error) {
-          console.error(error);
-          toast.error("Couldn't load history");
-        } else {
-          setRows((data ?? []) as PostRow[]);
-        }
+        setRows(rows as PostRow[]);
+        setLoading(false);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error(error);
+        toast.error("Couldn't load history");
         setLoading(false);
       });
     return () => {
