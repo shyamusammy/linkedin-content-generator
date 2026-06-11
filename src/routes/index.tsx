@@ -208,14 +208,14 @@ function GeneratePage() {
   };
 
   return (
-    <>
+    <div className="relative min-h-[calc(100vh-3rem)] w-full">
       <div
         aria-hidden
-        className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${homepageHero.url})` }}
       />
-      <div aria-hidden className="fixed inset-0 -z-10 bg-white/40" />
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col justify-center p-4 md:p-8 space-y-6">
+      <div aria-hidden className="absolute inset-0 bg-white/40" />
+      <div className="relative mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col justify-center p-4 md:p-8 space-y-6">
 
 
       <header className="space-y-1">
