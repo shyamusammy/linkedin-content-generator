@@ -1,20 +1,25 @@
 ## Goal
+Create a full-screen background for the homepage that uses the colors/visual style of the uploaded screenshot, while leaving all existing UI elements (sidebar, header, form card) exactly where they are.
 
-Use the uploaded `homepage-hero.png` as a full-screen background covering the entire viewport on `/`, with the existing form content rendered on top.
+## Steps
 
-## Changes
+1. **Generate background image**
+   - Use `imagegen--generate_image` to create an abstract background (1920×1080) inspired by the uploaded screenshot's palette: clean white/light gray base with subtle blue accent tones matching the LinkedIn AI Content Generator UI.
+   - Save to `src/assets/homepage-bg.jpg`.
 
-**`src/routes/index.tsx`**
+2. **Upload to Lovable Assets CDN**
+   - Run `lovable-assets create` on the generated file → `src/assets/homepage-bg.jpg.asset.json`.
+   - Remove the local binary.
 
-1. Remove the current `<div>` + `<img>` hero banner block (lines 212–219).
-2. Wrap the page in a fragment and add a fixed full-viewport background layer using the existing `homepageHero.url`:
-   - `<div className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: \`url(${homepageHero.url})\` }} aria-hidden />`
-   - Add a subtle dark overlay (`bg-background/70 backdrop-blur-sm`) so the form remains readable on top of the image.
-3. Keep the form container (`max-w-5xl` etc.) unchanged so content sits above the background.
+3. **Apply in `src/routes/index.tsx`**
+   - Replace the current `homepage-hero` background reference with the new `homepage-bg` asset.
+   - Keep the existing fixed full-viewport pattern (`fixed inset-0 -z-10 bg-cover bg-center`) and overlay.
+   - Tune the overlay opacity if needed so the light background doesn't wash out form readability.
 
-No other files are touched. Image asset pointer stays as-is.
+4. **Verify**
+   - Check the preview to confirm the background covers the full screen and the form/sidebar remain readable and unchanged.
 
-## Notes
-
-- Using `fixed inset-0 -z-10` ensures the image covers the entire viewport (not just the page section) and stays in place while scrolling.
-- `bg-cover` + `bg-center` makes the image fill the area without distortion, cropping as needed — this is the standard "cover the whole area" behavior.
+## Files touched
+- `src/assets/homepage-bg.jpg.asset.json` (new)
+- `src/routes/index.tsx` (swap background image URL)
+- Old `src/assets/homepage-hero.png.asset.json` left in place unless you want it deleted.
