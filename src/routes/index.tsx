@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getPostStatus, markPostFailed } from "@/lib/posts.functions";
 import { triggerN8nGeneration } from "@/lib/n8n.functions";
 import { useServerFn } from "@tanstack/react-start";
+import homepageHero from "@/assets/homepage-hero.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
