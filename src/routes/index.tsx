@@ -208,15 +208,14 @@ function GeneratePage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-8">
-      <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-        <img
-          src={homepageHero.url}
-          alt="LinkedIn AI Content Generator — craft polished posts in seconds"
-          className="h-auto w-full"
-          loading="eager"
-        />
-      </div>
+    <>
+      <div
+        aria-hidden
+        className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${homepageHero.url})` }}
+      />
+      <div aria-hidden className="fixed inset-0 -z-10 bg-background/70 backdrop-blur-sm" />
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-8">
 
       <header className="space-y-1">
         <h1 className="text-3xl font-semibold tracking-tight">Generate</h1>

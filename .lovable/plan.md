@@ -1,30 +1,20 @@
-## Problem
+## Goal
 
-The app is running on `f14199a3-bc89-499c-a804-135496fbd4ec.lovableproject.com` (the sandbox dev preview). The callback URL logic in `src/routes/index.tsx` only recognizes `.lovable.app` hosts:
+Use the uploaded `homepage-hero.png` as a full-screen background covering the entire viewport on `/`, with the existing form content rendered on top.
 
-```ts
-const callbackHost =
-  host.endsWith(".lovable.app") && !host.startsWith("id-preview--")
-    ? `https://${host}`
-    : `https://project--${projectId}-dev.lovable.app`;
-```
+## Changes
 
-Since the current host ends in `.lovableproject.com`, it falls back to `https://project--f14199a3-bc89-499c-a804-135496fbd4ec-dev.lovable.app/api/public/n8n-callback`. The project isn't published and that stable URL isn't currently routable, so n8n's callback POST fails and the row stays `pending` until the 5-min timeout — which matches what we see in the network log (many polls returning `status: pending`, then a final PATCH to `failed`).
+**`src/routes/index.tsx`**
 
-## Fix
+1. Remove the current `<div>` + `<img>` hero banner block (lines 212–219).
+2. Wrap the page in a fragment and add a fixed full-viewport background layer using the existing `homepageHero.url`:
+   - `<div className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: \`url(${homepageHero.url})\` }} aria-hidden />`
+   - Add a subtle dark overlay (`bg-background/70 backdrop-blur-sm`) so the form remains readable on top of the image.
+3. Keep the form container (`max-w-5xl` etc.) unchanged so content sits above the background.
 
-Update the callback-host selection in `src/routes/index.tsx` to also accept `.lovableproject.com` (the sandbox dev origin is publicly reachable and `/api/public/*` bypasses auth):
+No other files are touched. Image asset pointer stays as-is.
 
-```ts
-const isPubliclyReachable =
-  (host.endsWith(".lovable.app") && !host.startsWith("id-preview--")) ||
-  host.endsWith(".lovableproject.com");
+## Notes
 
-const callbackHost = isPubliclyReachable
-  ? `${window.location.protocol}//${host}`
-  : `https://project--${projectId}-dev.lovable.app`;
-```
-
-This keeps the existing behavior for published `.lovable.app` and custom-domain runs, avoids the auth-gated `id-preview--*` host, and uses the current sandbox origin when running from `lovableproject.com` so n8n's callback can actually reach `/api/public/n8n-callback`.
-
-No other files change. The server route, polling loop, and DB writes are already correct.
+- Using `fixed inset-0 -z-10` ensures the image covers the entire viewport (not just the page section) and stays in place while scrolling.
+- `bg-cover` + `bg-center` makes the image fill the area without distortion, cropping as needed — this is the standard "cover the whole area" behavior.
