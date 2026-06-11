@@ -165,11 +165,14 @@ function GeneratePage() {
       while (Date.now() - started < MAX_MS) {
         await new Promise((r) => setTimeout(r, INTERVAL_MS));
 
-        const { data: row, error: pollErr } = await supabase
-          .from("posts")
-          .select("status, title, linkedin_post, image_prompt, hashtags, cta")
-          .eq("id", pending.id)
-          .maybeSingle();
+        let row: Awaited<ReturnType<typeof getPostStatus>>["row"] = null;
+        let pollErr: unknown = null;
+        try {
+          const res = await getPostStatus({ data: { id: pending.id } });
+          row = res.row;
+        } catch (err) {
+          pollErr = err;
+        }
 
         if (pollErr) {
           console.error(pollErr);
