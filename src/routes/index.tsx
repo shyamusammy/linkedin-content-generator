@@ -109,15 +109,17 @@ function GeneratePage() {
       return;
     }
 
-    // n8n must hit a publicly reachable host. The preview iframe origin
-    // (id-preview--*.lovable.app) is auth-gated and 302s external callers
-    // to the login page, so we always use the stable preview/published host.
+    // n8n must hit a publicly reachable host. The lovableproject.com sandbox
+    // and id-preview--*.lovable.app are auth-gated (302 to login) for external
+    // callers, so always use the stable project--{id}-dev.lovable.app host
+    // unless we're already on a published .lovable.app domain.
     const projectId = import.meta.env.VITE_LOVABLE_PROJECT_ID ?? "f14199a3-bc89-499c-a804-135496fbd4ec";
     const host = window.location.host;
-    const isPubliclyReachable =
-      (host.endsWith(".lovable.app") && !host.startsWith("id-preview--")) ||
-      host.endsWith(".lovableproject.com");
-    const callbackHost = isPubliclyReachable
+    const onPublishedHost =
+      host.endsWith(".lovable.app") &&
+      !host.startsWith("id-preview--") &&
+      !host.startsWith(`project--${projectId}-dev.`);
+    const callbackHost = onPublishedHost
       ? `${window.location.protocol}//${host}`
       : `https://project--${projectId}-dev.lovable.app`;
     const callbackUrl = `${callbackHost}/api/public/n8n-callback`;
