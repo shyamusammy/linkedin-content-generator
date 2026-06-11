@@ -214,8 +214,9 @@ function GeneratePage() {
         className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${homepageHero.url})` }}
       />
-      <div aria-hidden className="fixed inset-0 -z-10 bg-background/30" />
-      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-8">
+      <div aria-hidden className="fixed inset-0 -z-10 bg-white/85" />
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col justify-center p-4 md:p-8 space-y-6">
+
 
       <header className="space-y-1">
         <h1 className="text-3xl font-semibold tracking-tight">Generate</h1>
