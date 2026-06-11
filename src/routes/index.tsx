@@ -150,7 +150,7 @@ function GeneratePage() {
           status: res.status,
           rawBody: text,
         });
-        await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+        await markPostFailed({ data: { id: pending.id } });
         toast.error(`Webhook error ${res.status}`);
         setLoading(false);
         return;
