@@ -217,10 +217,7 @@ function GeneratePage() {
       setErrorInfo({
         message: err instanceof Error ? err.message : "Network request failed",
       });
-      await supabase
-        .from("posts")
-        .update({ status: "failed" })
-        .eq("id", pending.id);
+      await markPostFailed({ data: { id: pending.id } });
       toast.error("Generation failed. Please try again.");
       setLoading(false);
     }
