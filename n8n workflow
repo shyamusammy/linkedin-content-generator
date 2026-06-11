@@ -1,0 +1,374 @@
+{
+  "name": "LinkedIn Content Generator_lovable",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert LinkedIn content creator and copywriter.\n\nCreate content based on:\n\nTopic: {{ $json.body.topic }}\n\nAudience: {{ $json.body.audience }}\n\nTone: {{ $json.body.tone }}\n\nPost Type: {{ $json.body.postType }}\n\nGenerate:\n\n1. Post Title\n2. LinkedIn Post\n3. Detailed AI Image Prompt\n4. Image Style\n5. Call To Action (CTA)\n\nRequirements:\n\n- Write specifically for the provided audience.\n- Match the requested tone.\n- Optimize for LinkedIn engagement.\n- Use strong hooks and clear structure.\n- Provide actionable insights where relevant.\n- Avoid generic AI-sounding language.\n- Make the content feel authentic and human.\n\nFollow the schema provided by the Structured Output Parser.\n\nReturn only the structured output.",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "id": "194c863a-9398-4947-9b48-f834e4bd4551",
+      "name": "Content creator",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        -1632,
+        -288
+      ],
+      "typeVersion": 1.9
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"AI Agents Are Eating SaaS\",\n  \"linkedin_post\": \"Most founders are building software for humans. The next generation of billion-dollar companies will build software for AI agents...\",\n  \"image_prompt\": \"Professional futuristic AI business visual...\",\n  \"image_style\": \"Corporate Futurist\",\n  \"cta\": \"What do you think about the future of AI agents?\"\n}",
+        "autoFix": true
+      },
+      "id": "90a026ed-605d-4c28-a2cb-383879c9390e",
+      "name": "Structured Output Parser1",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        -1536,
+        -64
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a LinkedIn SEO and hashtag strategist.\n\nAnalyze the following LinkedIn post and generate the most relevant hashtags to maximize reach, discoverability, and engagement.\n\nTitle:\n{{ $json.output.title }}\n\nPost:\n{{ $json.output.linkedin_post }}\n\nGenerate:\n\n1. 3-5 broad high-volume hashtags\n2. 3-5 niche-specific hashtags\n3. 1-2 trending/professional hashtags when relevant\n\nReturn hashtags only.\n\nFollow the schema provided by the Structured Output Parser.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "id": "315d7b1e-e155-4543-81be-bd962e2d4562",
+      "name": "Hashtag generator /SEO",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -1168,
+        -160
+      ],
+      "typeVersion": 2,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"hashtags\": [\n    \"#AI\",\n    \"#Automation\",\n    \"#LinkedIn\",\n    \"#ContentMarketing\",\n    \"#FutureOfWork\"\n  ]\n}"
+      },
+      "id": "e57ed392-18e7-48f6-aca1-e60cd1b6a341",
+      "name": "Structured Output Parser2",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        -992,
+        64
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "4619ade5-97d3-454d-9d20-3264d0267ce3",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        -816,
+        -288
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -1664,
+        -64
+      ],
+      "id": "19b79670-687f-4f02-b2c7-f353cdd95787",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "BONEPImu3hMZzCRb",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -1152,
+        64
+      ],
+      "id": "436ecf5c-7577-4ab2-8a50-e84bec6732e2",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "BONEPImu3hMZzCRb",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "a7f1b44e-8826-47a7-b160-a84bc1adcc16",
+      "name": "Google Gemini Chat Model Parser1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -1456,
+        144
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "BONEPImu3hMZzCRb",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-content",
+        "options": {
+          "responseCode": {
+            "values": {}
+          },
+          "responseData": "={{ { \"received\": true } }}"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1888,
+        -288
+      ],
+      "id": "39c11cdc-633f-4cb0-83af-c5b42e7b91ee",
+      "name": "Webhook",
+      "webhookId": "7f005761-5356-45b5-ac15-2164f79a9d8c"
+    },
+    {
+      "parameters": {
+        "tableId": "posts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('Webhook').item.json.body.email }}"
+            },
+            {
+              "fieldId": "topic",
+              "fieldValue": "={{ $('Webhook').item.json.body.topic }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.output.title }}"
+            },
+            {
+              "fieldId": "audience",
+              "fieldValue": "={{ $('Webhook').item.json.body.audience }}"
+            },
+            {
+              "fieldId": "tone",
+              "fieldValue": "={{ $('Webhook').item.json.body.tone }}"
+            },
+            {
+              "fieldId": "post_type",
+              "fieldValue": "={{ $('Webhook').item.json.body.postType }}"
+            },
+            {
+              "fieldId": "linkedin_post",
+              "fieldValue": "={{ $json.output.linkedin_post }}"
+            },
+            {
+              "fieldId": "image_prompt",
+              "fieldValue": "={{ $json.output.image_prompt }} \nImage_style \n{{ $json.output.image_style }}"
+            },
+            {
+              "fieldId": "hashtags",
+              "fieldValue": "={{ $json.output.hashtags.join(' ') }}"
+            },
+            {
+              "fieldId": "cta",
+              "fieldValue": "={{ $json.output.cta }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -288
+      ],
+      "id": "a9960f09-93d9-41d1-a286-e2f0f0c5768b",
+      "name": "database",
+      "credentials": {
+        "supabaseApi": {
+          "id": "qTbRjGtQjqcBLfTv",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $(\"Webhook\").item.json.body.callbackUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"id\": $(\"Webhook\").item.json.body.id, \"title\": $(\"Merge\").item.json.output.title, \"linkedin_post\": $(\"Merge\").item.json.output.linkedin_post, \"image_prompt\": $(\"Merge\").item.json.output.image_prompt, \"hashtags\": $(\"Merge\").item.json.output.hashtags, \"cta\": $(\"Merge\").item.json.output.cta } }}",
+        "options": {}
+      },
+      "id": "a7fa8f74-5b8e-4c95-b97d-7eaa4de5bfe5",
+      "name": "Callback to Lovable",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -368,
+        -288
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content creator": {
+      "main": [
+        [
+          {
+            "node": "Hashtag generator /SEO",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hashtag generator /SEO": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Content creator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Hashtag generator /SEO",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content creator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Hashtag generator /SEO",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model Parser1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Content creator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "database": {
+      "main": [
+        [
+          {
+            "node": "Callback to Lovable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f478336c-879e-4a89-b3c2-55b077c9b980",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6eb013a2930b918ee9ed95318730b6356d81a73dcda90822c2b8307c99361311"
+  },
+  "nodeGroups": [],
+  "id": "EMXkcSDfHQvPOpbT",
+  "tags": []
+}
