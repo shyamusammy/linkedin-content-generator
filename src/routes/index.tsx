@@ -21,6 +21,7 @@ import {
   type GeneratedContent,
 } from "@/lib/n8n";
 import { supabase } from "@/integrations/supabase/client";
+import { getPostStatus, markPostFailed } from "@/lib/posts.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -149,7 +150,7 @@ function GeneratePage() {
           status: res.status,
           rawBody: text,
         });
-        await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+        await markPostFailed({ data: { id: pending.id } });
         toast.error(`Webhook error ${res.status}`);
         setLoading(false);
         return;
@@ -164,11 +165,14 @@ function GeneratePage() {
       while (Date.now() - started < MAX_MS) {
         await new Promise((r) => setTimeout(r, INTERVAL_MS));
 
-        const { data: row, error: pollErr } = await supabase
-          .from("posts")
-          .select("status, title, linkedin_post, image_prompt, hashtags, cta")
-          .eq("id", pending.id)
-          .maybeSingle();
+        let row: Awaited<ReturnType<typeof getPostStatus>>["row"] = null;
+        let pollErr: unknown = null;
+        try {
+          const res = await getPostStatus({ data: { id: pending.id } });
+          row = res.row;
+        } catch (err) {
+          pollErr = err;
+        }
 
         if (pollErr) {
           console.error(pollErr);
@@ -205,7 +209,7 @@ function GeneratePage() {
         message:
           "Timed out waiting for n8n to call back (5 min). Verify the Respond to Webhook node is set to 'Immediately' and that the workflow POSTs results to the callback URL.",
       });
-      await supabase.from("posts").update({ status: "failed" }).eq("id", pending.id);
+      await markPostFailed({ data: { id: pending.id } });
       toast.error("Timed out");
       setLoading(false);
     } catch (err) {
@@ -213,10 +217,7 @@ function GeneratePage() {
       setErrorInfo({
         message: err instanceof Error ? err.message : "Network request failed",
       });
-      await supabase
-        .from("posts")
-        .update({ status: "failed" })
-        .eq("id", pending.id);
+      await markPostFailed({ data: { id: pending.id } });
       toast.error("Generation failed. Please try again.");
       setLoading(false);
     }
