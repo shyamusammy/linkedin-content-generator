@@ -114,10 +114,12 @@ function GeneratePage() {
     // to the login page, so we always use the stable preview/published host.
     const projectId = import.meta.env.VITE_LOVABLE_PROJECT_ID ?? "f14199a3-bc89-499c-a804-135496fbd4ec";
     const host = window.location.host;
-    const callbackHost =
-      host.endsWith(".lovable.app") && !host.startsWith("id-preview--")
-        ? `https://${host}` // already on the stable preview or published host
-        : `https://project--${projectId}-dev.lovable.app`;
+    const isPubliclyReachable =
+      (host.endsWith(".lovable.app") && !host.startsWith("id-preview--")) ||
+      host.endsWith(".lovableproject.com");
+    const callbackHost = isPubliclyReachable
+      ? `${window.location.protocol}//${host}`
+      : `https://project--${projectId}-dev.lovable.app`;
     const callbackUrl = `${callbackHost}/api/public/n8n-callback`;
 
     try {
