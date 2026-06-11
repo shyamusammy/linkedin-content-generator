@@ -21,7 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getPostStatus, markPostFailed } from "@/lib/posts.functions";
 import { triggerN8nGeneration } from "@/lib/n8n.functions";
 import { useServerFn } from "@tanstack/react-start";
-import homepageHero from "@/assets/homepage-bg.jpg.asset.json";
+import homepageHero from "@/assets/workspace-bg.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -214,8 +214,9 @@ function GeneratePage() {
         className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${homepageHero.url})` }}
       />
-      <div aria-hidden className="fixed inset-0 -z-10 bg-background/30" />
-      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-8">
+      <div aria-hidden className="fixed inset-0 -z-10 bg-white/85" />
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col justify-center p-4 md:p-8 space-y-6">
+
 
       <header className="space-y-1">
         <h1 className="text-3xl font-semibold tracking-tight">Generate</h1>
@@ -224,7 +225,8 @@ function GeneratePage() {
         </p>
       </header>
 
-      <Card className="rounded-2xl shadow-sm">
+      <Card className="rounded-2xl bg-white shadow-xl">
+
         <CardHeader>
           <CardTitle className="text-lg">New post</CardTitle>
           <CardDescription>
