@@ -371,6 +371,7 @@ function GeneratePage() {
       )}
 
       {result && <ResultsView content={result} />}
-    </div>
+      </div>
+    </>
   );
 }
