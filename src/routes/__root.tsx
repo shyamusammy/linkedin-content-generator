@@ -94,6 +94,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "LinkedIn AI Content Generator" },
+      { name: "description", content: "An AI-powered LinkedIn content generation platform that creates professional LinkedIn posts with Image Prompts and SEO HasTags" },
+      { property: "og:description", content: "An AI-powered LinkedIn content generation platform that creates professional LinkedIn posts with Image Prompts and SEO HasTags" },
+      { name: "twitter:description", content: "An AI-powered LinkedIn content generation platform that creates professional LinkedIn posts with Image Prompts and SEO HasTags" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a282350b-4fe3-44f1-a78f-a917cd339a61" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a282350b-4fe3-44f1-a78f-a917cd339a61" },
     ],
     links: [
       {
