@@ -39,7 +39,7 @@ export const Route = createFileRoute("/history")({
 
 type PostRow = {
   id: string;
-  email: string;
+  email?: string;
   topic: string;
   title: string | null;
   linkedin_post: string | null;
